@@ -15,4 +15,7 @@
   <ItemGroup>
     <None Include="tools/mdluac51.exe" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Adding2013Version Cards/**/*.cs" />
+  </ItemGroup>
 </Project>

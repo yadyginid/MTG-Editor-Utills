@@ -61,8 +61,10 @@ public sealed class GameRepository
                 if (!normalized.Contains("/Data_All_Platforms/Cards/", StringComparison.OrdinalIgnoreCase))
                     continue;
                 var fileName = Path.GetFileName(normalized);
-                if (fileName.EndsWith(".lol", StringComparison.OrdinalIgnoreCase) &&
-                    !Regex.IsMatch(Path.GetFileNameWithoutExtension(fileName), @"_\d{5,}$"))
+                var extension = Path.GetExtension(fileName);
+                var isCardSource = extension.Equals(".lol", StringComparison.OrdinalIgnoreCase) ||
+                                   extension.Equals(".xml", StringComparison.OrdinalIgnoreCase);
+                if (isCardSource && !Regex.IsMatch(Path.GetFileNameWithoutExtension(fileName), @"_\d{5,}$"))
                 {
                     _aggregateCardFiles.RemoveAll(existing =>
                         Path.GetFileName(existing.Entry.Name).Equals(fileName, StringComparison.OrdinalIgnoreCase) &&
@@ -73,8 +75,7 @@ public sealed class GameRepository
                         _aggregateCardFiles.Add(new BundleLocation(archive.Path, entry, archive.Number));
                     continue;
                 }
-                var extension = Path.GetExtension(fileName);
-                if (extension is not (".lol" or ".xml") && !extension.Equals(".LOL", StringComparison.OrdinalIgnoreCase) && !extension.Equals(".XML", StringComparison.OrdinalIgnoreCase))
+                if (!isCardSource)
                     continue;
                 var key = Path.GetFileNameWithoutExtension(fileName);
                 if (!Regex.IsMatch(key, @"_\d{5,}$"))
@@ -103,7 +104,7 @@ public sealed class GameRepository
         var document = LoadDocument(item);
         if (item.Format == CardSourceFormat.Lua)
         {
-            var aggregate = FindContainingAggregates(item.Key).FirstOrDefault();
+            var aggregate = FindContainingAggregates(item.Key, CardSourceFormat.Lua).FirstOrDefault();
             if (aggregate is not null)
             {
                 var aggregateSource = GetBundleSource(aggregate);
@@ -179,9 +180,7 @@ public sealed class GameRepository
         var cardsFolder = Path.Combine(WorkingRoot, "Data_All_Platforms", "Cards");
         Directory.CreateDirectory(cardsFolder);
         string? bundlePath = null;
-        var aggregates = card.Document.Format == CardSourceFormat.Lua
-            ? FindContainingAggregates(card.Index.Key)
-            : [];
+        var aggregates = FindContainingAggregates(card.Index.Key, card.Document.Format);
 
         // Deck building reads aggregate tables such as MO_PLAYER_POOL, while an
         // active match loads the standalone card chunk. Both representations must
@@ -225,11 +224,20 @@ public sealed class GameRepository
             {
                 progress?.Invoke($"Updating {Path.GetFileName(bundle.Entry.Name)}…");
                 var bundleSource = GetBundleSource(bundle);
-                var updatedBundle = LuaTableEditor.ReplaceCardObjectInBundle(bundleSource, card.Index.Key, updatedSource);
-                LuaDecompiler.Validate(updatedBundle, Path.GetFileName(bundle.Entry.Name));
                 var updatedPath = Path.Combine(cardsFolder, Path.GetFileName(bundle.Entry.Name));
-                progress?.Invoke($"Compiling {Path.GetFileName(bundle.Entry.Name)} to Lua 5.1…");
-                LuaCompiler.CompileToFile(updatedBundle, updatedPath, Path.GetFileName(bundle.Entry.Name));
+                string updatedBundle;
+                if (Path.GetExtension(bundle.Entry.Name).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    updatedBundle = XmlCardPoolEditor.ReplaceCardObjectInBundle(bundleSource, card.Index.Key, updatedSource);
+                    File.WriteAllText(updatedPath, updatedBundle, new UTF8Encoding(false));
+                }
+                else
+                {
+                    updatedBundle = LuaTableEditor.ReplaceCardObjectInBundle(bundleSource, card.Index.Key, updatedSource);
+                    LuaDecompiler.Validate(updatedBundle, Path.GetFileName(bundle.Entry.Name));
+                    progress?.Invoke($"Compiling {Path.GetFileName(bundle.Entry.Name)} to Lua 5.1…");
+                    LuaCompiler.CompileToFile(updatedBundle, updatedPath, Path.GetFileName(bundle.Entry.Name));
+                }
                 bundlePath ??= updatedPath;
                 lock (_sync)
                     _bundleSourceCache[BundleCacheKey(bundle)] = updatedBundle;
@@ -267,7 +275,7 @@ public sealed class GameRepository
         File.WriteAllBytes(cardPath, officialBytes);
 
         string? bundlePath = null;
-        var aggregates = FindContainingAggregates(cardKey);
+        var aggregates = FindContainingAggregates(cardKey, CardSourceFormat.Lua);
         if (aggregates.Count == 0)
             throw new InvalidOperationException($"Card {cardKey} was not found in an aggregate pool.");
 
@@ -378,12 +386,15 @@ public sealed class GameRepository
         return new InstallResult(Data008Path, backupPath, hash, packedFiles);
     }
 
-    private IReadOnlyList<BundleLocation> FindContainingAggregates(string cardKey)
+    private IReadOnlyList<BundleLocation> FindContainingAggregates(string cardKey, CardSourceFormat format)
     {
         var needle = Encoding.UTF8.GetBytes(cardKey);
         var matches = new List<BundleLocation>();
         foreach (var bundle in _aggregateCardFiles.OrderByDescending(b => b.ArchiveNumber))
         {
+            var isXml = Path.GetExtension(bundle.Entry.Name).Equals(".xml", StringComparison.OrdinalIgnoreCase);
+            if (isXml != (format == CardSourceFormat.Xml))
+                continue;
             var bytes = ZedArchive.Extract(bundle.ArchivePath, bundle.Entry);
             if (bytes.AsSpan().IndexOf(needle) >= 0)
                 matches.Add(bundle);
@@ -397,7 +408,10 @@ public sealed class GameRepository
         lock (_sync)
             if (_bundleSourceCache.TryGetValue(key, out var cached))
                 return cached;
-        var source = LuaDecompiler.Decode(ZedArchive.Extract(bundle.ArchivePath, bundle.Entry));
+        var bytes = ZedArchive.Extract(bundle.ArchivePath, bundle.Entry);
+        var source = Path.GetExtension(bundle.Entry.Name).Equals(".xml", StringComparison.OrdinalIgnoreCase)
+            ? Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', '\0', ' ', '\r', '\n', '\t')
+            : LuaDecompiler.Decode(bytes);
         lock (_sync)
             _bundleSourceCache[key] = source;
         return source;

@@ -1,6 +1,6 @@
 using System.Text;
 
-static class ZedBuilder
+public static class ZedBuilder
 {
     private const int SeedCentralHeaderSize = 340;
     private const int EntryPrefixSize = 46;

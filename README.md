@@ -35,3 +35,11 @@ The installer rebuilds `DATA_008.ZED`, verifies the file count, and creates a ti
 - Other abilities can be edited directly in the raw Lua/XML ability editor.
 
 The editor does not modify Steam API files.
+
+## Magic 2013 card importer
+
+The reproducible importer used to add the Magic 2013 card set is located in
+[`Adding2013Version Cards`](./Adding2013Version%20Cards). It creates a dedicated
+card-pool registration file, preserves card XML and artwork, patches the local
+2048-slot profile unlock table, and makes timestamped backups before installing
+the rebuilt `DATA_008.ZED`.
