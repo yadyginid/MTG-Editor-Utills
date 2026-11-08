@@ -26,7 +26,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            SetBusy(true, "Поиск папки Magic Duels…");
+            SetBusy(true, "Looking for the Magic Duels directory…");
             var gameDirectory = EditorSettings.LoadGameDirectory();
             if (!GameRepository.IsGameDirectory(gameDirectory))
             {
@@ -40,14 +40,14 @@ public partial class MainWindow : Window
             }
             else
             {
-                GameDirectoryBox.Text = "Каталог не выбран";
-                TopStatusText.Text = "Выберите каталог Magic Duels";
-                BottomStatusText.Text = "Нажмите «Выбрать…» и укажите папку, содержащую DATA_000.ZED и DATA_008.ZED.";
+                GameDirectoryBox.Text = "No directory selected";
+                TopStatusText.Text = "Select the Magic Duels directory";
+                BottomStatusText.Text = "Click Browse and select the folder containing DATA_000.ZED and DATA_008.ZED.";
             }
         }
         catch (Exception ex)
         {
-            ShowError("Не удалось открыть архивы игры", ex);
+            ShowError("Could not open the game archives", ex);
         }
         finally
         {
@@ -58,7 +58,7 @@ public partial class MainWindow : Window
     private async Task OpenGameDirectoryAsync(string gameDirectory)
     {
         if (!GameRepository.IsGameDirectory(gameDirectory))
-            throw new DirectoryNotFoundException("В выбранной папке не найдены DATA_000.ZED и DATA_008.ZED.");
+            throw new DirectoryNotFoundException("DATA_000.ZED and DATA_008.ZED were not found in the selected directory.");
         EditorSettings.SaveGameDirectory(gameDirectory);
         GameDirectoryBox.Text = Path.GetFullPath(gameDirectory);
         _repository = new GameRepository(gameDirectory);
@@ -66,7 +66,7 @@ public partial class MainWindow : Window
         SaveWorkingButton.IsEnabled = false;
         InstallButton.IsEnabled = false;
         await ReloadCatalogAsync();
-        BottomStatusText.Text = "Выберите карту и нажмите Edit.";
+        BottomStatusText.Text = "Select a card and click Edit.";
     }
 
     private async void ChooseGameDirectory_Click(object sender, RoutedEventArgs e)
@@ -74,13 +74,13 @@ public partial class MainWindow : Window
         if (_busy)
             return;
         if (_repository?.PendingChanges > 0 && MessageBox.Show(this,
-                "При смене каталога несохранённая рабочая сессия будет закрыта. Продолжить?",
-                "Смена каталога игры", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                "Changing the game directory will close the current unsaved working session. Continue?",
+                "Change game directory", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
         var dialog = new OpenFolderDialog
         {
-            Title = "Выберите каталог Magic Duels",
+            Title = "Select the Magic Duels directory",
             InitialDirectory = GameRepository.IsGameDirectory(GameDirectoryBox.Text)
                 ? GameDirectoryBox.Text
                 : Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
@@ -89,12 +89,12 @@ public partial class MainWindow : Window
             return;
         try
         {
-            SetBusy(true, "Открывается каталог игры…");
+            SetBusy(true, "Opening the game directory…");
             await OpenGameDirectoryAsync(dialog.FolderName);
         }
         catch (Exception ex)
         {
-            ShowError("Неверный каталог игры", ex);
+            ShowError("Invalid game directory", ex);
         }
         finally
         {
@@ -105,10 +105,10 @@ public partial class MainWindow : Window
     private async Task ReloadCatalogAsync()
     {
         if (_repository is null) return;
-        SetBusy(true, "Чтение каталогов DATA_000…DATA_008…");
+        SetBusy(true, "Reading DATA_000 through DATA_008…");
         _allCards = await Task.Run(() => _repository.BuildCatalog(ReportProgress));
         ApplyFilter();
-        TopStatusText.Text = $"Найдено карт: {_allCards.Count}";
+        TopStatusText.Text = $"Cards found: {_allCards.Count}";
         SetBusy(false);
     }
 
@@ -121,7 +121,7 @@ public partial class MainWindow : Window
                 card.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
                 card.Key.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         CardsList.ItemsSource = new ObservableCollection<CardIndexItem>(filtered);
-        CardCountText.Text = $"Показано: {filtered.Count} из {_allCards.Count}";
+        CardCountText.Text = $"Showing {filtered.Count} of {_allCards.Count}";
     }
 
     private async Task LoadSelectedAsync()
@@ -130,16 +130,16 @@ public partial class MainWindow : Window
             return;
         try
         {
-            SetBusy(true, $"Открывается {item.DisplayName}…");
+            SetBusy(true, $"Opening {item.DisplayName}…");
             var loaded = await Task.Run(() => _repository.LoadCard(item));
             _loadedCard = loaded;
             PopulateEditor(loaded);
-            BottomStatusText.Text = $"Открыта {loaded.Document.Title}. Изменения ещё не сохранены.";
+            BottomStatusText.Text = $"Opened {loaded.Document.Title}. Changes have not been saved yet.";
             SaveWorkingButton.IsEnabled = true;
         }
         catch (Exception ex)
         {
-            ShowError("Не удалось открыть карту", ex);
+            ShowError("Could not open the card", ex);
         }
         finally
         {
@@ -166,7 +166,7 @@ public partial class MainWindow : Window
     private void ReadEditorIntoDocument()
     {
         if (_loadedCard is null)
-            throw new InvalidOperationException("Сначала откройте карту.");
+            throw new InvalidOperationException("Open a card first.");
         _loadedCard.Document.Title = TitleBox.Text.Trim();
         _loadedCard.Document.ManaCost = ManaBox.Text.Trim();
         _loadedCard.Document.Power = PowerBox.Text.Trim();
@@ -198,7 +198,7 @@ public partial class MainWindow : Window
     private void CardsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (CardsList.SelectedItem is CardIndexItem item && !_busy)
-            BottomStatusText.Text = $"Выбрана {item.DisplayName}. Нажмите Edit для загрузки.";
+            BottomStatusText.Text = $"Selected {item.DisplayName}. Click Edit to load it.";
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -211,7 +211,7 @@ public partial class MainWindow : Window
     {
         if (_repository is null || _busy) return;
         try { await ReloadCatalogAsync(); }
-        catch (Exception ex) { ShowError("Не удалось обновить каталог", ex); }
+        catch (Exception ex) { ShowError("Could not reload the catalog", ex); }
         finally { SetBusy(false); }
     }
 
@@ -219,13 +219,13 @@ public partial class MainWindow : Window
     {
         if (_loadedCard is null)
         {
-            MessageBox.Show(this, "Сначала откройте карту.", "MTG-Editor-Utills", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Open a card first.", "MTG-Editor-Utills", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
         var dialog = new OpenFileDialog
         {
-            Title = "Выберите изображение карты",
-            Filter = "Изображения|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff|Все файлы|*.*"
+            Title = "Select card artwork",
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff|All files|*.*"
         };
         if (dialog.ShowDialog(this) != true) return;
         _loadedCard.NewArtPath = dialog.FileName;
@@ -247,9 +247,9 @@ public partial class MainWindow : Window
         try
         {
             AbilitiesBox.Text = AbilityTemplates.AddDeathDamage(_loadedCard.Document.Format, AbilitiesBox.Text);
-            BottomStatusText.Text = "Добавлен отдельный триггер смерти: 1 урон существу или игроку.";
+            BottomStatusText.Text = "Added a separate death trigger: deal 1 damage to a creature or player.";
         }
-        catch (Exception ex) { ShowError("Не удалось добавить триггер", ex); }
+        catch (Exception ex) { ShowError("Could not add the trigger", ex); }
     }
 
     private void AddMinusCounterDeathTrigger_Click(object sender, RoutedEventArgs e)
@@ -258,9 +258,9 @@ public partial class MainWindow : Window
         try
         {
             AbilitiesBox.Text = AbilityTemplates.AddDeathMinusCounter(_loadedCard.Document.Format, AbilitiesBox.Text);
-            BottomStatusText.Text = "Добавлен отдельный триггер смерти: жетон −1/−1.";
+            BottomStatusText.Text = "Added a separate death trigger: put a −1/−1 counter on a creature.";
         }
-        catch (Exception ex) { ShowError("Не удалось добавить триггер", ex); }
+        catch (Exception ex) { ShowError("Could not add the trigger", ex); }
     }
 
     private void ValidateAbilities_Click(object sender, RoutedEventArgs e)
@@ -270,10 +270,10 @@ public partial class MainWindow : Window
         {
             ReadEditorIntoDocument();
             _loadedCard.Document.ValidateAbilities();
-            BottomStatusText.Text = "Синтаксис способностей корректен.";
-            MessageBox.Show(this, "Синтаксис способностей корректен.", "Проверка", MessageBoxButton.OK, MessageBoxImage.Information);
+            BottomStatusText.Text = "Ability syntax is valid.";
+            MessageBox.Show(this, "Ability syntax is valid.", "Validation", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception ex) { ShowError("Ошибка в способностях", ex); }
+        catch (Exception ex) { ShowError("Ability error", ex); }
     }
 
     private async void SaveWorking_Click(object sender, RoutedEventArgs e)
@@ -282,15 +282,15 @@ public partial class MainWindow : Window
         try
         {
             ReadEditorIntoDocument();
-            SetBusy(true, "Сохранение рабочей копии…");
+            SetBusy(true, "Saving the working copy…");
             var result = await Task.Run(() => _repository.SaveToWorkspace(_loadedCard, ReportProgress));
             SourceBox.Text = _loadedCard.Document.SourceText;
             _loadedCard.Index.DisplayName = _loadedCard.Document.Title;
             ApplyFilter();
             InstallButton.IsEnabled = true;
-            BottomStatusText.Text = $"Сохранено: {result.CardPath}. Можно редактировать другие карты или установить все изменения.";
+            BottomStatusText.Text = $"Saved to {result.CardPath}. You can edit more cards or install all changes.";
         }
-        catch (Exception ex) { ShowError("Не удалось сохранить карту", ex); }
+        catch (Exception ex) { ShowError("Could not save the card", ex); }
         finally { SetBusy(false); }
     }
 
@@ -299,15 +299,15 @@ public partial class MainWindow : Window
         if (_repository is null || _busy) return;
         try
         {
-            SetBusy(true, "Сборка и установка DATA_008.ZED…");
+            SetBusy(true, "Building and installing DATA_008.ZED…");
             var result = await Task.Run(() => _repository.InstallWorkspace(ReportProgress));
             InstallButton.IsEnabled = false;
-            BottomStatusText.Text = $"Установлено. SHA-256: {result.Sha256}";
+            BottomStatusText.Text = $"Installed. SHA-256: {result.Sha256}";
             MessageBox.Show(this,
-                $"Изменения установлены.\n\nФайлов в архиве: {result.FileCount}\nРезервная копия:\n{result.BackupPath}\n\nТеперь можно запустить Magic Duels.",
-                "Установка завершена", MessageBoxButton.OK, MessageBoxImage.Information);
+                $"Changes installed.\n\nFiles in archive: {result.FileCount}\nBackup:\n{result.BackupPath}\n\nYou can now start Magic Duels.",
+                "Installation complete", MessageBoxButton.OK, MessageBoxImage.Information);
         }
-        catch (Exception ex) { ShowError("Не удалось установить изменения", ex); }
+        catch (Exception ex) { ShowError("Could not install the changes", ex); }
         finally { SetBusy(false); }
     }
 
@@ -320,7 +320,7 @@ public partial class MainWindow : Window
         SearchBox.IsEnabled = !value;
         ChooseGameDirectoryButton.IsEnabled = !value;
         if (!value && _repository is not null)
-            TopStatusText.Text = $"Найдено карт: {_allCards.Count} · изменений в сессии: {_repository.PendingChanges}";
+            TopStatusText.Text = $"Cards found: {_allCards.Count} · session changes: {_repository.PendingChanges}";
         SaveWorkingButton.IsEnabled = !value && _loadedCard is not null;
         InstallButton.IsEnabled = !value && _repository?.PendingChanges > 0;
     }

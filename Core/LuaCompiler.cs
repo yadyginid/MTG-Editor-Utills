@@ -9,7 +9,7 @@ public static class LuaCompiler
     {
         var compilerPath = Path.Combine(AppContext.BaseDirectory, "tools", "mdluac51.exe");
         if (!File.Exists(compilerPath))
-            throw new FileNotFoundException("Не найден встроенный компилятор Lua 5.1.", compilerPath);
+            throw new FileNotFoundException("The bundled Lua 5.1 compiler was not found.", compilerPath);
 
         var safeName = string.Concat(Path.GetFileName(logicalName)
             .Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch));
@@ -37,24 +37,24 @@ public static class LuaCompiler
             start.ArgumentList.Add(inputName);
             start.ArgumentList.Add(outputName);
             using var process = Process.Start(start)
-                ?? throw new InvalidOperationException("Не удалось запустить компилятор Lua 5.1.");
+                ?? throw new InvalidOperationException("Could not start the Lua 5.1 compiler.");
             var standardOutput = process.StandardOutput.ReadToEnd();
             var standardError = process.StandardError.ReadToEnd();
             if (!process.WaitForExit(30_000))
             {
                 process.Kill(entireProcessTree: true);
-                throw new TimeoutException("Компиляция Lua заняла больше 30 секунд.");
+                throw new TimeoutException("Lua compilation took longer than 30 seconds.");
             }
             if (process.ExitCode != 0 || !File.Exists(compiledPath))
-                throw new InvalidDataException($"Компилятор Lua завершился с кодом {process.ExitCode}: {standardError}{standardOutput}");
+                throw new InvalidDataException($"The Lua compiler exited with code {process.ExitCode}: {standardError}{standardOutput}");
 
             var bytes = File.ReadAllBytes(compiledPath);
             if (bytes.Length < 12 || bytes[0] != 0x1B || bytes[1] != (byte)'L' || bytes[2] != (byte)'u' ||
                 bytes[3] != (byte)'a' || bytes[4] != 0x51 || bytes[5] != 0x5F || bytes[7] != 4)
-                throw new InvalidDataException("Компилятор создал несовместимый заголовок Lua-байткода.");
+                throw new InvalidDataException("The compiler produced an incompatible Lua bytecode header.");
 
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath)
-                ?? throw new InvalidDataException("У выходного пути нет родительской папки."));
+                ?? throw new InvalidDataException("The output path has no parent directory."));
             File.WriteAllBytes(outputPath, bytes);
         }
         finally

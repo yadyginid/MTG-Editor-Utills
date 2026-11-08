@@ -34,14 +34,14 @@ public partial class App : Application
                 var log = new List<string>();
                 _ = repository.BuildCatalog(message => log.Add(message));
                 var count = repository.RecompilePlainLuaFiles(message => log.Add(message));
-                log.Add($"Скомпилировано Lua-файлов: {count}");
+                log.Add($"Lua files compiled: {count}");
                 if (count == 0)
-                    throw new InvalidOperationException("В DATA_008 нет текстовых Lua-файлов для перекомпиляции.");
+                    throw new InvalidOperationException("DATA_008 contains no plain-text Lua files to recompile.");
                 var installed = repository.InstallWorkspace(message => log.Add(message));
-                log.Add("Установлено: " + installed.InstalledPath);
-                log.Add("Резервная копия: " + installed.BackupPath);
+                log.Add("Installed: " + installed.InstalledPath);
+                log.Add("Backup: " + installed.BackupPath);
                 log.Add("SHA-256: " + installed.Sha256);
-                log.Add("Файлов в архиве: " + installed.FileCount);
+                log.Add("Files in archive: " + installed.FileCount);
                 File.WriteAllLines(logPath, log);
                 Environment.ExitCode = 0;
             }
@@ -62,7 +62,7 @@ public partial class App : Application
             try
             {
                 if (repairIndex + 1 >= e.Args.Length || string.IsNullOrWhiteSpace(e.Args[repairIndex + 1]))
-                    throw new ArgumentException("После --repair-card требуется внутренний ID карты.");
+                    throw new ArgumentException("An internal card ID is required after --repair-card.");
 
                 var cardKey = e.Args[repairIndex + 1];
                 var repository = new GameRepository();
@@ -70,22 +70,22 @@ public partial class App : Application
                 var catalog = repository.BuildCatalog(message => log.Add(message));
                 var item = catalog.FirstOrDefault(candidate =>
                     candidate.Key.Equals(cardKey, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new InvalidOperationException($"Карта {cardKey} не найдена.");
+                    ?? throw new InvalidOperationException($"Card {cardKey} was not found.");
                 var card = repository.LoadCard(item);
-                log.Add($"Загружена карта: {card.Document.Title} ({card.Index.Key})");
+                log.Add($"Loaded card: {card.Document.Title} ({card.Index.Key})");
                 card.Document.AbilitiesText = AbilityTemplates.RemoveDuplicateKnownTriggers(
                     card.Document.Format, card.Document.AbilitiesText, out var removedDuplicates);
-                log.Add($"Удалено повторяющихся триггеров: {removedDuplicates}");
+                log.Add($"Duplicate triggers removed: {removedDuplicates}");
                 var saved = repository.SaveToWorkspace(card, message => log.Add(message));
-                log.Add("Файл карты: " + saved.CardPath);
-                log.Add("Общий пул: " + (saved.BundlePath ?? "не найден"));
+                log.Add("Card file: " + saved.CardPath);
+                log.Add("Aggregate pool: " + (saved.BundlePath ?? "not found"));
                 if (saved.BundlePath is null)
-                    throw new InvalidOperationException("Запись карты не найдена ни в одном общем пуле.");
+                    throw new InvalidOperationException("The card record was not found in any aggregate pool.");
                 var installed = repository.InstallWorkspace(message => log.Add(message));
-                log.Add("Установлено: " + installed.InstalledPath);
-                log.Add("Резервная копия: " + installed.BackupPath);
+                log.Add("Installed: " + installed.InstalledPath);
+                log.Add("Backup: " + installed.BackupPath);
                 log.Add("SHA-256: " + installed.Sha256);
-                log.Add("Файлов в архиве: " + installed.FileCount);
+                log.Add("Files in archive: " + installed.FileCount);
                 File.WriteAllLines(logPath, log);
                 Environment.ExitCode = 0;
             }
@@ -106,20 +106,20 @@ public partial class App : Application
             try
             {
                 if (restoreIndex + 1 >= e.Args.Length || string.IsNullOrWhiteSpace(e.Args[restoreIndex + 1]))
-                    throw new ArgumentException("После --restore-official-card требуется внутренний ID карты.");
+                    throw new ArgumentException("An internal card ID is required after --restore-official-card.");
 
                 var cardKey = e.Args[restoreIndex + 1];
                 var repository = new GameRepository();
                 var log = new List<string>();
                 _ = repository.BuildCatalog(message => log.Add(message));
                 var saved = repository.RestoreOfficialCardToWorkspace(cardKey, message => log.Add(message));
-                log.Add("Файл карты: " + saved.CardPath);
-                log.Add("Общий пул: " + (saved.BundlePath ?? "не найден"));
+                log.Add("Card file: " + saved.CardPath);
+                log.Add("Aggregate pool: " + (saved.BundlePath ?? "not found"));
                 var installed = repository.InstallWorkspace(message => log.Add(message));
-                log.Add("Установлено: " + installed.InstalledPath);
-                log.Add("Резервная копия: " + installed.BackupPath);
+                log.Add("Installed: " + installed.InstalledPath);
+                log.Add("Backup: " + installed.BackupPath);
                 log.Add("SHA-256: " + installed.Sha256);
-                log.Add("Файлов в архиве: " + installed.FileCount);
+                log.Add("Files in archive: " + installed.FileCount);
                 File.WriteAllLines(logPath, log);
                 Environment.ExitCode = 0;
             }
@@ -140,7 +140,7 @@ public partial class App : Application
             try
             {
                 if (propagateIndex + 1 >= e.Args.Length || string.IsNullOrWhiteSpace(e.Args[propagateIndex + 1]))
-                    throw new ArgumentException("После --propagate-standalone-card требуется внутренний ID карты.");
+                    throw new ArgumentException("An internal card ID is required after --propagate-standalone-card.");
 
                 var cardKey = e.Args[propagateIndex + 1];
                 var repository = new GameRepository();
@@ -148,19 +148,19 @@ public partial class App : Application
                 var catalog = repository.BuildCatalog(message => log.Add(message));
                 var item = catalog.FirstOrDefault(candidate =>
                     candidate.Key.Equals(cardKey, StringComparison.OrdinalIgnoreCase))
-                    ?? throw new InvalidOperationException($"Карта {cardKey} не найдена.");
+                    ?? throw new InvalidOperationException($"Card {cardKey} was not found.");
                 var card = repository.LoadStandaloneCard(item);
-                log.Add($"Автономная карта: {card.Document.Title}; стоимость {card.Document.ManaCost}; сила/выносливость {card.Document.Power}/{card.Document.Toughness}.");
+                log.Add($"Standalone card: {card.Document.Title}; cost {card.Document.ManaCost}; power/toughness {card.Document.Power}/{card.Document.Toughness}.");
                 var saved = repository.SaveToWorkspace(card, message => log.Add(message));
-                log.Add("Файл карты: " + saved.CardPath);
-                log.Add("Общий пул: " + (saved.BundlePath ?? "не найден"));
+                log.Add("Card file: " + saved.CardPath);
+                log.Add("Aggregate pool: " + (saved.BundlePath ?? "not found"));
                 if (saved.BundlePath is null)
-                    throw new InvalidOperationException("Не найден общий пул, содержащий эту карту.");
+                    throw new InvalidOperationException("No aggregate pool containing this card was found.");
                 var installed = repository.InstallWorkspace(message => log.Add(message));
-                log.Add("Установлено: " + installed.InstalledPath);
-                log.Add("Резервная копия: " + installed.BackupPath);
+                log.Add("Installed: " + installed.InstalledPath);
+                log.Add("Backup: " + installed.BackupPath);
                 log.Add("SHA-256: " + installed.Sha256);
-                log.Add("Файлов в архиве: " + installed.FileCount);
+                log.Add("Files in archive: " + installed.FileCount);
                 File.WriteAllLines(logPath, log);
                 Environment.ExitCode = 0;
             }

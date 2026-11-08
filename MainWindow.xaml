@@ -23,7 +23,7 @@
         </Grid.RowDefinitions>
         <DockPanel>
           <TextBlock Text="MTG-Editor-Utills" Foreground="White" FontWeight="Bold" FontSize="20" />
-          <TextBlock x:Name="TopStatusText" Text="Подготовка…" Foreground="#B8C1D1" Margin="18,3,0,0" />
+          <TextBlock x:Name="TopStatusText" Text="Preparing…" Foreground="#B8C1D1" Margin="18,3,0,0" />
         </DockPanel>
         <Grid Grid.Row="1" Margin="0,9,0,0">
           <Grid.ColumnDefinitions>
@@ -31,9 +31,9 @@
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
-          <TextBlock Text="Каталог игры:" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0" />
+          <TextBlock Text="Game directory:" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0" />
           <TextBox Grid.Column="1" x:Name="GameDirectoryBox" IsReadOnly="True" Background="#F3F3F3" />
-          <Button Grid.Column="2" x:Name="ChooseGameDirectoryButton" Content="Выбрать…"
+          <Button Grid.Column="2" x:Name="ChooseGameDirectoryButton" Content="Browse…"
                   Click="ChooseGameDirectory_Click" Margin="8,0,0,0" Padding="16,4" />
         </Grid>
       </Grid>
@@ -41,11 +41,11 @@
 
     <DockPanel Grid.Row="1" Grid.Column="0">
       <TextBox x:Name="SearchBox" DockPanel.Dock="Top" Height="38" Margin="0,0,0,8"
-               ToolTip="Поиск по названию или внутреннему ID" TextChanged="SearchBox_TextChanged" />
+               ToolTip="Search by card name or internal ID" TextChanged="SearchBox_TextChanged" />
       <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
         <TextBlock x:Name="CardCountText" Foreground="#555" />
-        <Button Content="Edit — редактировать выбранную" Click="EditSelected_Click" FontWeight="Bold" />
-        <Button Content="Обновить список архивов" Click="ReloadCatalog_Click" />
+        <Button Content="Edit selected card" Click="EditSelected_Click" FontWeight="Bold" />
+        <Button Content="Reload archive list" Click="ReloadCatalog_Click" />
       </StackPanel>
       <ListBox x:Name="CardsList" SelectionChanged="CardsList_SelectionChanged"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True"
@@ -59,7 +59,7 @@
               </Grid.ColumnDefinitions>
               <Border Background="#111" BorderBrush="#777" BorderThickness="1" CornerRadius="4" Margin="0,0,10,0">
                 <Grid>
-                  <TextBlock Text="загрузка…" Foreground="#888" FontSize="11"
+                  <TextBlock Text="loading…" Foreground="#888" FontSize="11"
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                   <Image Source="{Binding Thumbnail}" Tag="{Binding}" Loaded="CardThumbnail_Loaded"
                          Stretch="UniformToFill" SnapsToDevicePixels="True" />
@@ -80,7 +80,7 @@
     </DockPanel>
 
     <TabControl Grid.Row="1" Grid.Column="2" x:Name="EditorTabs">
-      <TabItem Header="Основное">
+      <TabItem Header="General">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <Grid Margin="12">
             <Grid.ColumnDefinitions>
@@ -99,21 +99,21 @@
               <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Label Grid.Row="0" Content="Название" />
+            <Label Grid.Row="0" Content="Name" />
             <TextBox Grid.Row="0" Grid.Column="1" x:Name="TitleBox" />
-            <Label Grid.Row="1" Content="Мана" />
-            <TextBox Grid.Row="1" Grid.Column="1" x:Name="ManaBox" ToolTip="Например: {B}, {2}{R}, {G}{G}" />
-            <Label Grid.Row="2" Content="Сила" />
+            <Label Grid.Row="1" Content="Mana cost" />
+            <TextBox Grid.Row="1" Grid.Column="1" x:Name="ManaBox" ToolTip="For example: {B}, {2}{R}, {G}{G}" />
+            <Label Grid.Row="2" Content="Power" />
             <TextBox Grid.Row="2" Grid.Column="1" x:Name="PowerBox" />
-            <Label Grid.Row="3" Content="Выносливость (HP)" />
+            <Label Grid.Row="3" Content="Toughness (HP)" />
             <TextBox Grid.Row="3" Grid.Column="1" x:Name="ToughnessBox" />
-            <Label Grid.Row="4" Content="Художник" />
+            <Label Grid.Row="4" Content="Artist" />
             <TextBox Grid.Row="4" Grid.Column="1" x:Name="ArtistBox" />
-            <Label Grid.Row="5" Content="Внутренний ID" />
+            <Label Grid.Row="5" Content="Internal ID" />
             <TextBox Grid.Row="5" Grid.Column="1" x:Name="InternalIdBox" IsReadOnly="True" Background="#EEE" />
-            <Label Grid.Row="6" Content="Новая картинка" />
+            <Label Grid.Row="6" Content="New artwork" />
             <DockPanel Grid.Row="6" Grid.Column="1">
-              <Button DockPanel.Dock="Right" Content="Выбрать…" Click="ChooseArt_Click" />
+              <Button DockPanel.Dock="Right" Content="Browse…" Click="ChooseArt_Click" />
               <TextBox x:Name="ArtPathBox" IsReadOnly="True" />
             </DockPanel>
 
@@ -121,37 +121,37 @@
                     BorderBrush="#888" BorderThickness="1" CornerRadius="4" Background="#111">
               <Grid>
                 <Image x:Name="ArtPreview" Stretch="Uniform" />
-                <TextBlock x:Name="ArtPlaceholder" Text="Предпросмотр новой картинки"
+                <TextBlock x:Name="ArtPlaceholder" Text="New artwork preview"
                            Foreground="#AAA" HorizontalAlignment="Center" VerticalAlignment="Center"
                            TextWrapping="Wrap" TextAlignment="Center" Margin="20" />
               </Grid>
             </Border>
 
             <TextBlock Grid.Row="7" Grid.ColumnSpan="3" Margin="4,18,4,4" TextWrapping="Wrap" Foreground="#555"
-                       Text="Изменения сначала сохраняются в рабочую копию. Кнопка «Установить в игру» создаёт резервную копию DATA_008.ZED и заменяет архив только при закрытой игре." />
+                       Text="Changes are first saved to a working copy. Install to game creates a backup of DATA_008.ZED and replaces the archive only while the game is closed." />
           </Grid>
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="Способности и триггеры">
+      <TabItem Header="Abilities and triggers">
         <DockPanel Margin="10">
           <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-            <Button Content="+ При смерти: 1 урон" Click="AddDamageDeathTrigger_Click" />
-            <Button Content="+ При смерти: жетон −1/−1" Click="AddMinusCounterDeathTrigger_Click" />
-            <Button Content="Проверить синтаксис" Click="ValidateAbilities_Click" />
+            <Button Content="+ On death: deal 1 damage" Click="AddDamageDeathTrigger_Click" />
+            <Button Content="+ On death: −1/−1 counter" Click="AddMinusCounterDeathTrigger_Click" />
+            <Button Content="Validate syntax" Click="ValidateAbilities_Click" />
           </WrapPanel>
           <TextBlock DockPanel.Dock="Bottom" Margin="4,8,4,0" Foreground="#555" TextWrapping="Wrap"
-                     Text="Здесь находится поле abilities из Lua или узлы способностей из XML. Готовые кнопки добавляют полноценный отдельный триггер; остальные способности можно редактировать вручную." />
+                     Text="This is the Lua abilities field or the XML ability nodes. Template buttons add a complete separate trigger; other abilities can be edited manually." />
           <TextBox x:Name="AbilitiesBox" AcceptsReturn="True" AcceptsTab="True"
                    HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                    FontFamily="Consolas" FontSize="13" TextWrapping="NoWrap" />
         </DockPanel>
       </TabItem>
 
-      <TabItem Header="Исходник">
+      <TabItem Header="Source">
         <DockPanel Margin="10">
           <TextBlock DockPanel.Dock="Top" Margin="4,0,4,8" Foreground="#555" TextWrapping="Wrap"
-                     Text="Полный декомпилированный источник для справки. Основные поля и способности редактируйте на соседних вкладках." />
+                     Text="Full decompiled source for reference. Edit the main fields and abilities on the other tabs." />
           <TextBox x:Name="SourceBox" IsReadOnly="True" AcceptsReturn="True" AcceptsTab="True"
                    HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"
                    FontFamily="Consolas" FontSize="12" TextWrapping="NoWrap" Background="#F5F5F5" />
@@ -166,8 +166,8 @@
       </Grid.ColumnDefinitions>
       <TextBlock x:Name="BottomStatusText" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#444" />
       <StackPanel Grid.Column="1" Orientation="Horizontal">
-        <Button x:Name="SaveWorkingButton" Content="Сохранить в рабочую копию" Click="SaveWorking_Click" IsEnabled="False" />
-        <Button x:Name="InstallButton" Content="Установить в игру" Click="Install_Click" IsEnabled="False" FontWeight="Bold" />
+        <Button x:Name="SaveWorkingButton" Content="Save to working copy" Click="SaveWorking_Click" IsEnabled="False" />
+        <Button x:Name="InstallButton" Content="Install to game" Click="Install_Click" IsEnabled="False" FontWeight="Bold" />
       </StackPanel>
     </Grid>
   </Grid>

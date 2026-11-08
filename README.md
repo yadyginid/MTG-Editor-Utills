@@ -1,22 +1,22 @@
 # MTG-Editor-Utills
 
-Редактор карт для локальной установки Magic Duels.
+Card editor for a local Magic Duels installation.
 
 ## Run
 
-Запустите `Start-MTG-Editor-Utills.cmd` или `dist-fixed/MTG-Editor-Utills.exe`.
+Run `Start-MTG-Editor-Utills.cmd` or `dist-fixed/MTG-Editor-Utills.exe`.
 
-При первом запуске нажмите **Выбрать…** рядом с полем **Каталог игры** и укажите папку Magic Duels, содержащую `DATA_000.ZED` и `DATA_008.ZED`. Последний выбранный путь сохраняется в `%LOCALAPPDATA%\MTG-Editor-Utills\settings.json`.
+On first launch, click **Browse…** next to **Game directory** and select the Magic Duels folder containing `DATA_000.ZED` and `DATA_008.ZED`. The most recently selected path is stored in `%LOCALAPPDATA%\MTG-Editor-Utills\settings.json`.
 
 ## Workflow
 
 1. Search for a card in the list and select it.
-2. Click **Edit — редактировать выбранную**.
+2. Click **Edit selected card**.
 3. Change the title, mana cost, power, toughness, artist, or image.
-4. Open **Способности и триггеры** to edit the Lua/XML ability block.
+4. Open **Abilities and triggers** to edit the Lua/XML ability block.
 5. Use the template buttons to add either of the supported death triggers.
-6. Click **Сохранить в рабочую копию**. More cards can be edited in the same session.
-7. Close Magic Duels and click **Установить в игру**.
+6. Click **Save to working copy**. More cards can be edited in the same session.
+7. Close Magic Duels and click **Install to game**.
 
 The installer rebuilds `DATA_008.ZED`, verifies the file count, and creates a timestamped backup in `UrukCardEditorData/Backups` before replacement.
 

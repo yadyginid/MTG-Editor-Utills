@@ -47,7 +47,7 @@ public sealed class GameRepository
 
         foreach (var archive in archives)
         {
-            progress?.Invoke($"Индексируется DATA_{archive.Number:000}…");
+            progress?.Invoke($"Indexing DATA_{archive.Number:000}…");
             foreach (var entry in ZedArchive.ReadEntries(archive.Path).Where(e => e.CompressedSize > 0))
             {
                 var normalized = entry.Name.Replace('\\', '/');
@@ -173,7 +173,7 @@ public sealed class GameRepository
     public SaveResult SaveToWorkspace(LoadedCard card, Action<string>? progress = null)
     {
         EnsureWorkspace(progress);
-        progress?.Invoke("Проверяется и сохраняется файл карты…");
+        progress?.Invoke("Validating and saving the card file…");
         var updatedSource = card.Document.ApplyChanges();
         var extension = card.Document.Format == CardSourceFormat.Xml ? ".xml" : ".lol";
         var cardsFolder = Path.Combine(WorkingRoot, "Data_All_Platforms", "Cards");
@@ -198,18 +198,18 @@ public sealed class GameRepository
                         officialBytes, officialSource, card.Document,
                         out var patchedBytes, out var patchMessage))
                 {
-                    progress?.Invoke($"Патчится штатный байткод {Path.GetFileName(cardPath)} для матча ({patchMessage})…");
+                    progress?.Invoke($"Patching official bytecode {Path.GetFileName(cardPath)} for matches ({patchMessage})…");
                     File.WriteAllBytes(cardPath, patchedBytes);
                     wroteOfficialPatch = true;
                 }
                 else
                 {
-                    progress?.Invoke($"Штатный байткод нельзя пропатчить: {patchMessage}");
+                    progress?.Invoke($"Official bytecode cannot be patched: {patchMessage}");
                 }
             }
             if (!wroteOfficialPatch)
             {
-                progress?.Invoke($"Компилируется автономный файл {Path.GetFileName(cardPath)} для матча…");
+                progress?.Invoke($"Compiling standalone match file {Path.GetFileName(cardPath)}…");
                 LuaCompiler.CompileToFile(updatedSource, cardPath, Path.GetFileName(cardPath));
             }
         }
@@ -220,15 +220,15 @@ public sealed class GameRepository
 
         if (aggregates.Count > 0)
         {
-            progress?.Invoke("Ищутся общие записи наборов и пула карт…");
+            progress?.Invoke("Finding aggregate set and card-pool records…");
             foreach (var bundle in aggregates)
             {
-                progress?.Invoke($"Обновляется {Path.GetFileName(bundle.Entry.Name)}…");
+                progress?.Invoke($"Updating {Path.GetFileName(bundle.Entry.Name)}…");
                 var bundleSource = GetBundleSource(bundle);
                 var updatedBundle = LuaTableEditor.ReplaceCardObjectInBundle(bundleSource, card.Index.Key, updatedSource);
                 LuaDecompiler.Validate(updatedBundle, Path.GetFileName(bundle.Entry.Name));
                 var updatedPath = Path.Combine(cardsFolder, Path.GetFileName(bundle.Entry.Name));
-                progress?.Invoke($"Компилируется {Path.GetFileName(bundle.Entry.Name)} в Lua 5.1…");
+                progress?.Invoke($"Compiling {Path.GetFileName(bundle.Entry.Name)} to Lua 5.1…");
                 LuaCompiler.CompileToFile(updatedBundle, updatedPath, Path.GetFileName(bundle.Entry.Name));
                 bundlePath ??= updatedPath;
                 lock (_sync)
@@ -240,8 +240,8 @@ public sealed class GameRepository
         if (!string.IsNullOrWhiteSpace(card.NewArtPath))
         {
             if (string.IsNullOrWhiteSpace(card.Document.ArtId))
-                throw new InvalidDataException("У карты не найден ARTID/art_id, поэтому имя текстуры определить нельзя.");
-            progress?.Invoke("Конвертируется изображение в TDX/DXT1…");
+                throw new InvalidDataException("The card has no ARTID/art_id, so the texture name cannot be determined.");
+            progress?.Invoke("Converting artwork to TDX/DXT1…");
             var artFolder = Path.Combine(WorkingRoot, "Data_All_Platforms", "Art_Assets", "Illustrations");
             artPath = Path.Combine(artFolder, card.Document.ArtId + ".tdx");
             TdxCodec.WriteCardArt(card.NewArtPath, artPath);
@@ -255,7 +255,7 @@ public sealed class GameRepository
     {
         EnsureWorkspace(progress);
         var officialBytes = FindOfficialStandalone(cardKey)
-            ?? throw new InvalidOperationException($"Штатный автономный файл карты {cardKey} не найден в DATA_000–DATA_007.");
+            ?? throw new InvalidOperationException($"The official standalone file for {cardKey} was not found in DATA_000 through DATA_007.");
         var officialSource = LuaDecompiler.Decode(officialBytes);
         var officialDocument = CardDocument.Parse(cardKey, CardSourceFormat.Lua, officialSource);
         officialDocument.ValidateAbilities();
@@ -263,17 +263,17 @@ public sealed class GameRepository
         var cardsFolder = Path.Combine(WorkingRoot, "Data_All_Platforms", "Cards");
         Directory.CreateDirectory(cardsFolder);
         var cardPath = Path.Combine(cardsFolder, cardKey + ".lol");
-        progress?.Invoke($"Восстанавливается штатный байткод {Path.GetFileName(cardPath)}…");
+        progress?.Invoke($"Restoring official bytecode {Path.GetFileName(cardPath)}…");
         File.WriteAllBytes(cardPath, officialBytes);
 
         string? bundlePath = null;
         var aggregates = FindContainingAggregates(cardKey);
         if (aggregates.Count == 0)
-            throw new InvalidOperationException($"Запись карты {cardKey} не найдена в общем пуле.");
+            throw new InvalidOperationException($"Card {cardKey} was not found in an aggregate pool.");
 
         foreach (var bundle in aggregates)
         {
-            progress?.Invoke($"Восстанавливается штатная запись в {Path.GetFileName(bundle.Entry.Name)}…");
+            progress?.Invoke($"Restoring the official record in {Path.GetFileName(bundle.Entry.Name)}…");
             var bundleSource = GetBundleSource(bundle);
             var updatedBundle = LuaTableEditor.ReplaceCardObjectInBundle(bundleSource, cardKey, officialSource);
             LuaDecompiler.Validate(updatedBundle, Path.GetFileName(bundle.Entry.Name));
@@ -285,7 +285,7 @@ public sealed class GameRepository
         }
 
         PendingChanges++;
-        progress?.Invoke($"Восстановлена карта: {officialDocument.Title}, {officialDocument.ManaCost}, {officialDocument.Power}/{officialDocument.Toughness}.");
+        progress?.Invoke($"Restored card: {officialDocument.Title}, {officialDocument.ManaCost}, {officialDocument.Power}/{officialDocument.Toughness}.");
         return new SaveResult(cardPath, bundlePath, null);
     }
 
@@ -331,7 +331,7 @@ public sealed class GameRepository
                 continue;
             var source = Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF');
             LuaDecompiler.Validate(source, Path.GetFileName(path));
-            progress?.Invoke($"Компилируется {Path.GetFileName(path)} в Lua 5.1…");
+            progress?.Invoke($"Compiling {Path.GetFileName(path)} to Lua 5.1…");
             LuaCompiler.CompileToFile(source, path, Path.GetFileName(path));
             count++;
         }
@@ -344,13 +344,13 @@ public sealed class GameRepository
     public InstallResult InstallWorkspace(Action<string>? progress = null)
     {
         if (PendingChanges == 0)
-            throw new InvalidOperationException("В рабочей копии нет новых сохранённых изменений.");
+            throw new InvalidOperationException("The working copy has no newly saved changes.");
         if (Process.GetProcessesByName("MagicDuels").Length > 0)
-            throw new InvalidOperationException("Сначала полностью закройте Magic Duels.");
+            throw new InvalidOperationException("Close Magic Duels completely first.");
         var currentProcessId = Environment.ProcessId;
         if (Process.GetProcessesByName("MTG-Editor-Utills").Any(process => process.Id != currentProcessId) ||
             Process.GetProcessesByName("UrukCardEditor").Any(process => process.Id != currentProcessId))
-            throw new InvalidOperationException("Сначала закройте другие запущенные экземпляры MTG-Editor-Utills.");
+            throw new InvalidOperationException("Close all other running instances of MTG-Editor-Utills first.");
 
         Directory.CreateDirectory(BackupDirectory);
         var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
@@ -358,21 +358,21 @@ public sealed class GameRepository
         var dataBinPath = Path.Combine(SessionDirectory, "Data.bin");
         var outputPath = Path.Combine(SessionDirectory, "DATA_008.new.ZED");
 
-        progress?.Invoke("Создаётся резервная копия DATA_008.ZED…");
+        progress?.Invoke("Creating a backup of DATA_008.ZED…");
         File.Copy(Data008Path, backupPath, overwrite: false);
         global::ZedBuilder.CreateDataBin(Data008Path, dataBinPath);
-        progress?.Invoke("Собирается новый DATA_008.ZED…");
+        progress?.Invoke("Building a new DATA_008.ZED…");
         global::ZedBuilder.CreateZed(dataBinPath, WorkingRoot, outputPath);
 
-        progress?.Invoke("Проверяется состав нового архива…");
+        progress?.Invoke("Verifying the new archive contents…");
         var sourceFiles = Directory.EnumerateFiles(WorkingRoot, "*", SearchOption.AllDirectories).Count();
         var packedFiles = ZedArchive.ReadEntries(outputPath).Count(e =>
             e.CompressedSize > 0 && e.Name.StartsWith("DATA_008/", StringComparison.OrdinalIgnoreCase));
         if (sourceFiles != packedFiles)
-            throw new InvalidDataException($"Проверка архива не прошла: исходных файлов {sourceFiles}, упаковано {packedFiles}.");
+            throw new InvalidDataException($"Archive validation failed: {sourceFiles} source files, {packedFiles} packed files.");
 
         var hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(outputPath)));
-        progress?.Invoke("Устанавливается проверенный архив…");
+        progress?.Invoke("Installing the validated archive…");
         File.Move(outputPath, Data008Path, overwrite: true);
         PendingChanges = 0;
         return new InstallResult(Data008Path, backupPath, hash, packedFiles);
@@ -407,11 +407,11 @@ public sealed class GameRepository
     {
         if (Directory.Exists(WorkingRoot))
             return;
-        progress?.Invoke("Создаётся рабочая копия DATA_008…");
+        progress?.Invoke("Creating a working copy of DATA_008…");
         Directory.CreateDirectory(SessionDirectory);
         ZedArchive.ExtractAll(Data008Path, SessionDirectory);
         if (!Directory.Exists(WorkingRoot))
-            throw new InvalidDataException("Архив DATA_008 не создал ожидаемую рабочую папку.");
+            throw new InvalidDataException("The DATA_008 archive did not create the expected working directory.");
     }
 
     private static bool IsPreferred(CardIndexItem candidate, CardIndexItem existing) =>
@@ -448,7 +448,7 @@ public sealed class GameRepository
                 directory = directory.Parent;
             }
         }
-        throw new DirectoryNotFoundException("Не удалось найти папку Magic Duels с DATA_000.ZED и DATA_008.ZED.");
+        throw new DirectoryNotFoundException("Could not find a Magic Duels directory containing DATA_000.ZED and DATA_008.ZED.");
     }
 
     public static bool IsGameDirectory(string? path) =>

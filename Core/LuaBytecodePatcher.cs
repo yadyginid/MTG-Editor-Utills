@@ -24,7 +24,7 @@ public static class LuaBytecodePatcher
             var original = CardDocument.Parse(edited.CardKey, CardSourceFormat.Lua, originalSource);
             if (!EquivalentLua(original.AbilitiesText, edited.AbilitiesText))
             {
-                reason = "способности отличаются от штатного автономного файла";
+                reason = "abilities differ from the official standalone file";
                 return false;
             }
 
@@ -39,7 +39,7 @@ public static class LuaBytecodePatcher
 
             var titleValues = ExtractPrintedTitleValues(originalSource);
             if (titleValues.Count == 0)
-                throw new InvalidDataException("В штатной карте не найдены локализованные заголовки.");
+                throw new InvalidDataException("No localized titles were found in the official card.");
             var replacementTitle = Encoding.UTF8.GetBytes(edited.Title);
             var replacedTitles = 0;
             foreach (var value in titleValues)
@@ -53,10 +53,10 @@ public static class LuaBytecodePatcher
                 }
             }
             if (replacedTitles == 0)
-                throw new InvalidDataException("Локализованные заголовки не найдены в байткоде.");
+                throw new InvalidDataException("Localized titles were not found in the bytecode.");
 
             patchedBytes = ApplyReplacements(originalBytes, replacements);
-            reason = $"изменено строковых констант: {replacements.Count}";
+            reason = $"string constants changed: {replacements.Count}";
             return true;
         }
         catch (Exception ex)
@@ -97,16 +97,16 @@ public static class LuaBytecodePatcher
                     continue;
                 var valueIndex = valueOperand - 256;
                 if (valueIndex >= function.Constants.Count || function.Constants[valueIndex] is not { } reference)
-                    throw new InvalidDataException($"Поле {field} не ссылается на строковую константу.");
+                    throw new InvalidDataException($"Field {field} does not reference a string constant.");
                 matches.Add((function, valueIndex, reference));
             }
         }
 
         if (matches.Count != 1)
-            throw new InvalidDataException($"Ожидалось одно присваивание поля {field}, найдено: {matches.Count}.");
+            throw new InvalidDataException($"Expected one assignment to field {field}; found {matches.Count}.");
         var match = matches[0];
         if (CountInstructionUses(match.Function, match.ConstantIndex) != 1)
-            throw new InvalidDataException($"Константа поля {field} используется несколькими инструкциями.");
+            throw new InvalidDataException($"The constant for field {field} is used by multiple instructions.");
         replacements[match.Reference] = replacement;
     }
 
@@ -209,7 +209,7 @@ public static class LuaBytecodePatcher
             if (bytes.Length < 12 || bytes[0] != 0x1B || bytes[1] != (byte)'L' || bytes[2] != (byte)'u' ||
                 bytes[3] != (byte)'a' || bytes[4] != 0x51 || bytes[6] != 1 || bytes[7] != 4 || bytes[8] != 4 ||
                 bytes[9] != 4 || bytes[10] != 8)
-                throw new InvalidDataException("Неподдерживаемый формат Lua-байткода.");
+                throw new InvalidDataException("Unsupported Lua bytecode format.");
             _offset = 12;
             return ParseFunction();
         }
@@ -235,7 +235,7 @@ public static class LuaBytecodePatcher
                     1 => SkipAndNull(1),
                     3 => SkipAndNull(8),
                     4 => ReadString(),
-                    _ => throw new InvalidDataException($"Неизвестный тип Lua-константы: {type}.")
+                    _ => throw new InvalidDataException($"Unknown Lua constant type: {type}.")
                 });
             }
 
@@ -266,7 +266,7 @@ public static class LuaBytecodePatcher
             if (length == 0)
                 return null;
             if (length < 1 || _offset + length > bytes.Length)
-                throw new InvalidDataException("Повреждённая строка Lua.");
+                throw new InvalidDataException("Corrupted Lua string.");
             var dataOffset = _offset;
             var value = bytes.AsSpan(_offset, length - 1).ToArray();
             Skip(length);
