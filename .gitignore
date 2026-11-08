@@ -1,0 +1,8 @@
+bin/
+obj/
+dist-fixed/
+*.log
+
+# Native Lua build intermediates. The packaged compiler is kept in tools/.
+third_party/lua-5.1/*.obj
+third_party/lua-5.1/mdluac51.exe
