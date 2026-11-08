@@ -1,0 +1,57 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "MTG-Editor-Utills/1.0.0": {
+        "dependencies": {
+          "MoonSharp": "2.0.0",
+          "unluac.net": "1.1.5792.32599"
+        },
+        "runtime": {
+          "MTG-Editor-Utills.dll": {}
+        }
+      },
+      "MoonSharp/2.0.0": {
+        "runtime": {
+          "lib/netstandard1.6/MoonSharp.Interpreter.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.0.0.0"
+          }
+        }
+      },
+      "unluac.net/1.1.5792.32599": {
+        "runtime": {
+          "lib/net40/unluac.net.dll": {
+            "assemblyVersion": "1.1.5792.32599",
+            "fileVersion": "1.1.5792.32599"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "MTG-Editor-Utills/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "MoonSharp/2.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-uiAcRh7d+53k3xW9pFDJfAFVw4RnjHVCJG05M3oPAVEVwPtFavhg1H/IpC6So4X1j9kJlzuLlA3OghhPcIvc5A==",
+      "path": "moonsharp/2.0.0",
+      "hashPath": "moonsharp.2.0.0.nupkg.sha512"
+    },
+    "unluac.net/1.1.5792.32599": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-bqbZUSqDdXyIVN3zNEKSfJFidAmEFA9MSwUdbMxYmBSgfDDYOvkKdQJlRTDMf/xCEEoqoCDgRY+AUcjsebRTsw==",
+      "path": "unluac.net/1.1.5792.32599",
+      "hashPath": "unluac.net.1.1.5792.32599.nupkg.sha512"
+    }
+  }
+}

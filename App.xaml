@@ -1,0 +1,18 @@
+<Application x:Class="UrukCardEditor.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             StartupUri="MainWindow.xaml">
+  <Application.Resources>
+    <Style TargetType="Button">
+      <Setter Property="Margin" Value="4" />
+      <Setter Property="Padding" Value="12,7" />
+    </Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Margin" Value="4" />
+      <Setter Property="Padding" Value="6" />
+    </Style>
+    <Style TargetType="Label">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </Application.Resources>
+</Application>
