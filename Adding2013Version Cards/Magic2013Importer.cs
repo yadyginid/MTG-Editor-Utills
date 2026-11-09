@@ -54,13 +54,25 @@ public static class Magic2013Importer
             var roundTripCount = roundTrip.Split('\n').Count(line => line.TrimStart().StartsWith("name = ", StringComparison.Ordinal));
             if (roundTripCount != collectible || !roundTrip.Contains($"id = \"{lastId}\"", StringComparison.Ordinal))
                 throw new InvalidDataException("Compiled registration failed round-trip validation.");
+
+            var modulesDirectory = Path.Combine(validationRoot, "Cards");
+            Directory.CreateDirectory(modulesDirectory);
+            foreach (var card in cards)
+            {
+                var module = Magic2013CardConverter.BuildStandaloneModule(card.Xml);
+                LuaDecompiler.Validate(module, card.FileName + ".lol");
+                LuaCompiler.CompileToFile(
+                    module,
+                    Path.Combine(modulesDirectory, card.FileName + ".lol"),
+                    card.FileName + ".lol");
+            }
         }
         finally
         {
             if (Directory.Exists(validationRoot))
                 Directory.Delete(validationRoot, recursive: true);
         }
-        log($"Validated {cards.Count} definitions and {collectible} collectible registrations.");
+        log($"Validated and compiled {cards.Count} standalone card modules and {collectible} collectible registrations.");
         return new SourceValidationResult(cards.Count, collectible, cards.Count - collectible, options.StartId, lastId);
     }
 
@@ -131,6 +143,18 @@ public static class Magic2013Importer
             new XDocument(new XDeclaration("1.0", "utf-8", null), card).Save(writer);
         }
 
+        log("Compiling standalone LOL modules used by the duel engine...");
+        foreach (var sourceCard in sourceCards)
+        {
+            var module = Magic2013CardConverter.BuildStandaloneModule(sourceCard.Xml);
+            LuaDecompiler.Validate(module, sourceCard.FileName + ".lol");
+            LuaCompiler.CompileToFile(
+                module,
+                Path.Combine(targetCardsDirectory, sourceCard.FileName + ".lol"),
+                sourceCard.FileName + ".lol");
+        }
+        log($"Standalone duel modules compiled: {sourceCards.Count}");
+
         log("Copying TDX illustrations...");
         var artCount = 0;
         foreach (var sourcePath in Directory.EnumerateFiles(sourceArtDirectory, "*.tdx")
@@ -176,7 +200,7 @@ public static class Magic2013Importer
         log("Building DATA_008.ZED...");
         global::ZedBuilder.CreateDataBin(seedArchive, dataBinPath);
         global::ZedBuilder.CreateZed(dataBinPath, workingRoot, builtArchivePath);
-        VerifyArchive(builtArchivePath, collectibleCards.Count, lastId);
+        VerifyArchive(builtArchivePath, sourceCards, collectibleCards.Count, lastId);
 
         var backupDirectory = Path.Combine(dataRoot, "Backups");
         Directory.CreateDirectory(backupDirectory);
@@ -212,6 +236,7 @@ public static class Magic2013Importer
             $"Source: {options.SourceDirectory}",
             $"Game: {gameDirectory}",
             $"CARD_V2 XML files: {sourceCards.Count}",
+            $"Standalone LOL duel modules: {sourceCards.Count}",
             $"Collectible registrations: {collectibleCards.Count}",
             $"Token definitions (not registered): {sourceCards.Count - collectibleCards.Count}",
             $"TDX illustrations: {artCount}",
@@ -299,9 +324,14 @@ public static class Magic2013Importer
         throw new FileNotFoundException($"Active archive entry was not found: {entrySuffix}");
     }
 
-    private static void VerifyArchive(string archivePath, int expectedCards, int expectedLastId)
+    private static void VerifyArchive(
+        string archivePath,
+        IReadOnlyList<SourceCard> sourceCards,
+        int expectedCards,
+        int expectedLastId)
     {
-        var entry = ZedArchive.ReadEntries(archivePath).FirstOrDefault(candidate =>
+        var entries = ZedArchive.ReadEntries(archivePath);
+        var entry = entries.FirstOrDefault(candidate =>
             candidate.Name.Replace('\\', '/').EndsWith($"/CardPools/{RegistrationName}", StringComparison.OrdinalIgnoreCase))
             ?? throw new InvalidDataException("The built archive has no Magic 2013 registration pool.");
         var source = LuaDecompiler.Decode(ZedArchive.Extract(archivePath, entry));
@@ -309,6 +339,16 @@ public static class Magic2013Importer
         if (registeredCards != expectedCards || !source.Contains($"id = \"{expectedLastId}\"", StringComparison.Ordinal))
             throw new InvalidDataException(
                 $"Registration verification failed: expected {expectedCards} cards ending at ID {expectedLastId}.");
+
+        var moduleNames = new HashSet<string>(
+            entries.Where(candidate => candidate.Name.Replace('\\', '/').Contains("/Data_All_Platforms/Cards/", StringComparison.OrdinalIgnoreCase))
+                .Where(candidate => candidate.Name.EndsWith(".lol", StringComparison.OrdinalIgnoreCase))
+                .Select(candidate => Path.GetFileNameWithoutExtension(candidate.Name)),
+            StringComparer.OrdinalIgnoreCase);
+        var missingModules = sourceCards.Where(card => !moduleNames.Contains(card.FileName)).Select(card => card.FileName).Take(10).ToList();
+        if (missingModules.Count > 0)
+            throw new InvalidDataException(
+                "The built archive is missing standalone duel modules: " + string.Join(", ", missingModules));
     }
 
     private static void InstallArchive(string sourcePath, string targetPath)

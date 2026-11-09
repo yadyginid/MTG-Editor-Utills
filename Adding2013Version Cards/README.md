@@ -1,18 +1,23 @@
 # Adding Magic 2013 cards to Magic Duels
 
-This command-line tool reproduces the import used by `MTG-Editor-Utills` to make
-extracted Magic 2013 cards appear in the final Magic Duels collection.
+This command-line tool imports extracted Magic 2013 cards into the final Magic
+Duels release for both deck building and actual duels.
 
 It performs all required layers of the import:
 
 1. Copies the original `CARD_V2` XML files and TDX illustrations.
-2. Converts the card metadata into the compiled Lua 5.1 card-definition bundle.
-3. Creates `CardPools/M13_IMPORTED_CARD_POOL.lol` with explicit IDs starting at
+2. Converts every complete `CARD_V2` definition, including abilities, targets,
+   filters, costs, triggers, and executable actions, into a standalone compiled
+   Lua 5.1 `.lol` module used by the duel engine.
+3. Adds full card objects to the compiled card-definition bundle used by the
+   collection and deck builder.
+4. Creates `CardPools/M13_IMPORTED_CARD_POOL.lol` with explicit IDs starting at
    `1328`. This registration file is required for the cards to appear in the
    collection.
-4. Rebuilds and installs `DATA_008.ZED` after verifying the new registration.
-5. Patches the local Steam profile unlock table and recalculates `hash.file`.
-6. Creates timestamped backups of both the archive and profile before replacing
+5. Rebuilds and installs `DATA_008.ZED` after verifying both the registration
+   and all standalone duel modules.
+6. Patches the local Steam profile unlock table and recalculates `hash.file`.
+7. Creates timestamped backups of both the archive and profile before replacing
    anything.
 
 No Magic 2013 cards, artwork, profiles, or game archives are stored in this
@@ -40,8 +45,8 @@ Source/Data_All_Platforms/
 
 Close Magic Duels and `MTG-Editor-Utills` before starting an import.
 
-To validate the source and perform a compile/decompile round trip without
-changing game or profile files, add `--validate-only`.
+To validate the source and compile all standalone duel modules plus the card
+registration without changing game or profile files, add `--validate-only`.
 
 ## Run
 
